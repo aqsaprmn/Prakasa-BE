@@ -51,4 +51,9 @@ class User extends Authenticatable
     {
         return "uuid";
     }
+
+    // public function findForPassport(string $email): User
+    // {
+    //     return $this->where('email', $email)->first();
+    // }
 }

@@ -72,6 +72,15 @@ class AuthController extends Controller
 
         $token = $user->createToken('mytoken')->accessToken;
 
+        // $response = Http::asForm()->post(env('APP_URL') . '/oauth/token', [
+        //     'grant_type' => 'password',
+        //     'client_id' => env('PASSPORT_PASSWORD_CLIENT_ID'),
+        //     'client_secret' => env('PASSPORT_PASSWORD_SECRET'),
+        //     'username' => $credentials["email"],
+        //     'password' => $credentials["password"],
+        //     'scope' => '',
+        // ]);
+
         return $this->respondWithToken($token);
     }
 
@@ -117,9 +126,11 @@ class AuthController extends Controller
      */
     public function refresh(Request $request)
     {
-        $response = Http::asForm()->post(env('APP_URL') . '/oauth/token', [
+        $token = explode(" ", $request->header("Authorization"))[1];
+
+        $response = Http::asForm()->post(env('APP_URL') . '/oauth/token/refresh', [
             'grant_type' => 'refresh_token',
-            'refresh_token' => $request->refresh_token,
+            'refresh_token' => $token,
             'client_id' => env('PASSPORT_PASSWORD_CLIENT_ID'),
             'client_secret' => env('PASSPORT_PASSWORD_SECRET'),
             'scope' => '',
