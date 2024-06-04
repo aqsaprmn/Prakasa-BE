@@ -68,20 +68,23 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $user = User::where("email", $credentials["email"])->first();
+        // $user = User::where("email", $credentials["email"])->first();
 
-        $token = $user->createToken('mytoken')->accessToken;
+        // $token = $user->createToken('mytoken')->accessToken;
 
-        // $response = Http::asForm()->post(env('APP_URL') . '/oauth/token', [
-        //     'grant_type' => 'password',
-        //     'client_id' => env('PASSPORT_PASSWORD_CLIENT_ID'),
-        //     'client_secret' => env('PASSPORT_PASSWORD_SECRET'),
-        //     'username' => $credentials["email"],
-        //     'password' => $credentials["password"],
-        //     'scope' => '',
-        // ]);
+        $request = Request::create(env('APP_URL') . '/oauth/token', 'POST', [
+            'grant_type' => 'password',
+            'client_id' => env('PASSPORT_PASSWORD_CLIENT_ID'),
+            'client_secret' => env('PASSPORT_PASSWORD_SECRET'),
+            'username' => $credentials["email"],
+            'password' => $credentials["password"],
+            'scope' => '',
+        ]);
 
-        return $this->respondWithToken($token);
+        $result = app()->handle($request);
+        $response = json_decode($result->getContent(), true);
+
+        return $this->respondWithToken($response);
     }
 
     /**
@@ -126,9 +129,9 @@ class AuthController extends Controller
      */
     public function refresh(Request $request)
     {
-        $token = explode(" ", $request->header("Authorization"))[1];
+        $token = $request->get("refresh_token");
 
-        $response = Http::asForm()->post(env('APP_URL') . '/oauth/token/refresh', [
+        $request = Request::create(env('APP_URL') . '/oauth/token', 'POST', [
             'grant_type' => 'refresh_token',
             'refresh_token' => $token,
             'client_id' => env('PASSPORT_PASSWORD_CLIENT_ID'),
@@ -136,7 +139,10 @@ class AuthController extends Controller
             'scope' => '',
         ]);
 
-        return $this->respondWithToken($response->json());
+        $result = app()->handle($request);
+        $response = json_decode($result->getContent(), true);
+
+        return $this->respondWithToken($response);
     }
 
     /**
@@ -153,9 +159,10 @@ class AuthController extends Controller
             "message" => "Login success",
             "data" => [
                 "detail" => auth()->user(),
-                'access_token' => $token,
-                'token_type' => 'bearer',
-                'expires_in' => 60000
+                'access_token' => $token["access_token"],
+                'refresh_token' => $token["refresh_token"],
+                'token_type' => $token["token_type"],
+                'expires_in' => $token["expires_in"]
             ]
         ], 200);
     }
